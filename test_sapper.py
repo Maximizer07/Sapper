@@ -2,6 +2,28 @@ from unittest import TestCase
 from sapper import *
 
 
+class TestCell(TestCase):
+    def test_boom(self):
+        cl = create_field()
+        create_bomb()
+        for cell in cl.cells:
+            if cell.bomb:
+                cell.boom()
+                assert cell.opened is True
+
+    def test_set_label(self):
+        cl = create_field()
+        create_bomb()
+        for cell in cl.cells:
+            cell.set_label()
+        for cell in cl.cells:
+            assert cell.label == "!"
+        for cell in cl.cells:
+            cell.set_label()
+        for cell in cl.cells:
+            assert cell.label is None
+
+
 class Test(TestCase):
     def test_create_field(self):
         cl = create_field()
