@@ -3,6 +3,18 @@ from sapper import *
 
 
 class TestCell(TestCase):
+    def test_open(self):
+        cl = create_field()
+        create_bomb()
+        for cell in sample(cl.cells, k=15):
+            cell.set_label()
+            assert cell.open() is None
+        for cell in cl.cells:
+            if cell.label:
+                assert cell.open() is None
+            else:
+                assert cell.open() is True
+
     def test_boom(self):
         cl = create_field()
         create_bomb()
