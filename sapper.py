@@ -10,6 +10,9 @@ BOMBS_COUNT = 10
 CELL_FONT = pygame.font.SysFont("microsofttalie", 40)
 FONT50 = pygame.font.SysFont("microsofttalie", 50)
 FONT20 = pygame.font.SysFont("microsofttalie", 20)
+WIN = 1
+DEFEAT = 2
+game_over = False
 
 
 class Cell:
@@ -50,17 +53,24 @@ class Cell:
 
                 elif buttons[2]:
                     self.set_label()
+
     def open(self):
         if self.label:
             return None
 
-
+        near_cells = self._find_near_cells()
+        for cell in near_cells:
+            if cell.bomb:
+                self.near_bombs += 1
 
         self.color = (153, 153, 153)
         self.color_border = (128, 128, 128)
         self.opened = True
 
-
+        if self.near_bombs == 0:
+            for cell in near_cells:
+                if not cell.opened:
+                    cell.open()
         return self.opened
 
     def set_label(self):
@@ -73,7 +83,6 @@ class Cell:
             self.label = None
             self.color_label = None
         return self.label
-
 
     def boom(self):
         self.color = (0, 0, 0)
@@ -99,10 +108,46 @@ class Cell:
             img_surf = pygame.transform.scale(img, (55, 55))
             screen.blit(img_surf, (self.x, self.y))
 
+        if game_over == DEFEAT:
+            if self.bomb:
+                if self.opened:
+                    img = pygame.image.load(f'storage/red_bomb.jpg')
+                    img_surf = pygame.transform.scale(img, (55, 55))
+                    screen.blit(img_surf, (self.x, self.y))
+                else:
+                    img = pygame.image.load(f'storage/bomb.png')
+                    img_surf = pygame.transform.scale(img, (55, 55))
+                    screen.blit(img_surf, (self.x, self.y))
         if self.label:
             flag = pygame.image.load('storage/flag.png')
             flag_surf = pygame.transform.scale(flag, (55, 55))
             screen.blit(flag_surf, (self.x, self.y))
+
+    def _find_near_cells(self):
+        index = self.cells.index(self)
+        row, column = index % 10, index // 10
+        near_cells = []
+
+        if row != 0:
+            near_cells.append(self.cells[index - 1])
+        if row != 0 and column != 0:
+            near_cells.append(self.cells[index - 11])
+        if row != 0 and column != 9:
+            near_cells.append(self.cells[index + 9])
+
+        if column != 0:
+            near_cells.append(self.cells[index - 10])
+        if column != 9:
+            near_cells.append(self.cells[index + 10])
+
+        if row != 9:
+            near_cells.append(self.cells[index + 1])
+        if row != 9 and column != 0:
+            near_cells.append(self.cells[index - 9])
+        if row != 9 and column != 9:
+            near_cells.append(self.cells[index + 11])
+
+        return near_cells
 
 
 def create_field():
@@ -133,6 +178,7 @@ def draw_interface():
     follow = FONT20.render(text, True, (0, 0, 0))
     screen.blit(follow, (SIZE[0] - 180, y + 27))
 
+
 def create_bomb():
     for cell in sample(Cell.cells, k=BOMBS_COUNT):
         cell.bomb = True
@@ -144,6 +190,7 @@ def count_labels():
         if cell.label == "!":
             count += 1
     return count
+
 
 def main():
     global screen
@@ -159,17 +206,33 @@ def main():
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 for cel in Cell.cells:
-                    if cel.check_click(event) and cel.bomb:
-                        pass
+                    if not game_over:
+                        if cel.check_click(event) and cel.bomb:
+                            game_over = DEFEAT
             elif event.type == pygame.KEYDOWN:
+                game_over = False
                 Cell.cells = []
                 create_field()
                 create_bomb()
 
         for cel in Cell.cells:
+            if not cel.opened and not cel.bomb:
+                break
+        else:
+            game_over = WIN
+
+        for cel in Cell.cells:
             cel.draw()
         draw_interface()
 
+        if game_over == WIN:
+            text = "Вы победили!"
+            follow = FONT50.render(text, True, (0, 0, 0))
+            screen.blit(follow, (160, SIZE[1] - 42))
+        elif game_over == DEFEAT:
+            text = "Вы проиграли!"
+            follow = FONT50.render(text, True, (0, 0, 0))
+            screen.blit(follow, (160, SIZE[1] - 42))
 
         pygame.display.update()
         clock.tick(30)
